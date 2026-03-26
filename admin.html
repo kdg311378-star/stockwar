@@ -18,7 +18,7 @@
     <div class="flex justify-between items-end mb-12">
         <div>
             <h1 class="text-6xl font-black italic text-emerald-500 tracking-tighter">MASTER PANEL</h1>
-            <p class="text-slate-500 font-bold uppercase tracking-widest mt-2">현재 라운드: <span id="master-round-num" class="text-white mono">ROUND -</span></p>
+            <p class="text-slate-500 font-bold uppercase tracking-widest mt-2">진행 라운드: <span id="master-round-num" class="text-white mono">ROUND -</span></p>
         </div>
         <div class="flex gap-4">
             <button onclick="nextRound()" class="bg-emerald-500 text-[#020617] px-8 py-4 rounded-2xl font-black text-lg shadow-[0_0_25px_rgba(52,211,153,0.2)] active:scale-95 transition-all">다음 라운드 활성화 🚀</button>
@@ -38,8 +38,17 @@
 
         <div class="glass rounded-[3rem] p-8">
             <h2 class="text-xl font-black mb-6 text-amber-500 italic">🔐 라운드별 보안코드</h2>
-            <div id="pw-display" class="space-y-2 opacity-50 text-[10px]">
-                </div>
+            <div class="space-y-3 opacity-60">
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5 text-xs"><span>ROUND 1</span><span class="mono text-emerald-400 font-black">1004</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5 text-xs"><span>ROUND 2</span><span class="mono text-emerald-400 font-black">5520</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5 text-xs"><span>ROUND 3</span><span class="mono text-emerald-400 font-black">7788</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5 text-xs"><span>ROUND 4</span><span class="mono text-emerald-400 font-black">0404</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5 text-xs"><span>ROUND 5</span><span class="mono text-emerald-400 font-black">8282</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5 text-xs"><span>ROUND 6</span><span class="mono text-emerald-400 font-black">1234</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5 text-xs"><span>ROUND 7</span><span class="mono text-emerald-400 font-black">9900</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5 text-xs"><span>ROUND 8</span><span class="mono text-emerald-400 font-black">4444</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5 text-xs"><span>ROUND 9</span><span class="mono text-emerald-400 font-black">2026</span></div>
+            </div>
         </div>
     </div>
 
@@ -57,18 +66,16 @@
             const data = snap.val(); if(!data) { document.getElementById('rank-list').innerHTML = ""; return; }
             const sorted = Object.entries(data).sort((a,b)=>b[1].assets - a[1].assets);
             document.getElementById('rank-list').innerHTML = sorted.map(([name, info], i) => {
-                // 사용자가 정산 코드를 입력해서 '다음 라운드 대기' 상태인 경우 투명하게 표시
                 const isWaiting = info.isWaiting === true;
                 const isLocked = info.isLocked === true;
-
                 return `
-                <tr class="border-t border-white/5 ${isWaiting ? 'opacity-30' : 'opacity-100'} transition-opacity">
+                <tr class="border-t border-white/5 ${isWaiting ? 'opacity-30' : ''} transition-opacity">
                     <td class="p-8 font-black text-4xl text-slate-700 italic mono">${i+1}</td>
                     <td class="text-xl font-bold">${name}</td>
                     <td class="text-2xl font-black text-emerald-400 mono">₩ ${info.assets.toLocaleString()}</td>
                     <td class="py-4">
                         <span class="${isWaiting ? 'text-amber-500' : (isLocked ? 'text-emerald-500' : 'text-red-500 animate-pulse')} font-black text-[10px] uppercase tracking-widest">
-                            ${isWaiting ? '[정산완료-대기]' : (isLocked ? '[확정완료]' : '[입력중...]')}
+                            ${isWaiting ? '[정산대기]' : (isLocked ? '[확정완료]' : '[입력중...]')}
                         </span>
                     </td>
                     <td class="pr-8">
@@ -87,8 +94,8 @@
         function nextRound() { if(confirm(`ROUND ${currentRound+1}을 활성화할까요?`)) db.ref('game_settings').update({ currentRound: currentRound + 1 }); }
         function addCoin(n, a) { db.ref('rankings/'+n+'/coins').transaction(c => (c||0)+a); }
         function kick(n) { if(confirm(`${n} 팀을 추방할까요?`)) db.ref('rankings/'+n).remove(); }
-        function globalReset() { if(confirm("전체 초기화합니다.")) { db.ref('rankings').remove(); db.ref('game_settings').update({ currentRound: 1 }); } }
-        function editBal(n, c) { const v = prompt(`${n} 팀 자산 수정`, c); if(v) db.ref('rankings/'+n).update({ assets: parseInt(v) }); }
+        function globalReset() { if(confirm("전체 리셋합니다.")) { db.ref('rankings').remove(); db.ref('game_settings').update({ currentRound: 1 }); } }
+        function editBal(n, c) { const v = prompt(`${n} 자산 수정`, c); if(v) db.ref('rankings/'+n).update({ assets: parseInt(v) }); }
     </script>
 </body>
 </html>
