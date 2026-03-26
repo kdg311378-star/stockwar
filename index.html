@@ -14,14 +14,14 @@
         body { font-family: 'Pretendard', sans-serif; background-color: #020617; color: #f8fafc; -webkit-tap-highlight-color: transparent; }
         .mono { font-family: 'JetBrains Mono', monospace; }
         .glass { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .neon-text { text-shadow: 0 0 10px rgba(52, 211, 153, 0.4); }
+        input[type="number"]::-webkit-inner-spin-button { display: none; }
     </style>
 </head>
 <body class="antialiased overflow-x-hidden">
 
     <div id="setup-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-8 bg-[#020617]">
         <div class="w-full max-w-xs text-center">
-            <h1 class="text-5xl font-black mb-1 italic text-emerald-400 neon-text tracking-tighter">STOCK WAR</h1>
+            <h1 class="text-5xl font-black mb-1 italic text-emerald-400 tracking-tighter">STOCK WAR</h1>
             <div class="space-y-4 mt-12">
                 <input type="text" id="user-name" placeholder="팀명 입력" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center font-bold outline-none focus:border-emerald-500 text-white">
                 <button onclick="startGame()" class="w-full bg-emerald-500 text-[#020617] p-4 rounded-2xl font-black text-lg">시스템 접속</button>
@@ -37,7 +37,7 @@
                     <h2 class="text-2xl font-extrabold mono text-emerald-400 italic">₩ <span id="display-assets">0</span></h2>
                 </div>
                 <div class="text-right">
-                    <div id="display-round" class="bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full text-[10px] font-black mono border border-emerald-500/20 italic uppercase tracking-tighter">ROUND 1</div>
+                    <div id="display-round" class="bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full text-[10px] font-black mono border border-emerald-500/20 italic">ROUND 1</div>
                     <p class="mt-2 text-[10px] font-bold text-slate-400">Coin <span id="display-coins" class="text-amber-400 text-lg ml-1 mono">0</span></p>
                 </div>
             </div>
@@ -51,7 +51,7 @@
             </section>
 
             <section class="p-6 glass rounded-[2.5rem]">
-                <div class="flex justify-between items-center mb-6"><h3 class="font-black text-slate-400 text-[10px] tracking-widest uppercase italic">Portfolio Config</h3><span class="text-[9px] text-slate-600 font-bold">(만 원 단위)</span></div>
+                <div class="flex justify-between items-center mb-6"><h3 class="font-black text-slate-400 text-[10px] tracking-widest uppercase italic">Portfolio Config</h3><span class="text-[9px] text-slate-600 font-bold">(단위: 만 원)</span></div>
                 <div id="company-list" class="space-y-3"></div>
                 <button id="lock-btn" onclick="lockInvestment()" class="w-full mt-8 bg-white text-[#020617] py-4 rounded-2xl font-black text-xs tracking-widest active:scale-95">투자 포지션 확정</button>
             </section>
@@ -63,64 +63,59 @@
                     <button id="settle-btn" onclick="processSettlement()" class="w-full bg-emerald-500 text-[#020617] py-4 rounded-2xl font-black text-sm active:scale-95">정산하기</button>
                 </div>
                 <div id="waiting-msg" class="hidden text-center py-4">
-                    <p class="text-amber-400 font-black text-xs animate-pulse">정산 완료! 다음 라운드 대기 중...</p>
-                    <p class="text-slate-500 text-[9px] mt-2 italic">관리자가 라운드를 활성화하면 수익이 반영됩니다.</p>
+                    <p class="text-amber-400 font-black text-xs animate-pulse">정산 완료! 관리자가 다음 라운드를 시작하면 수익이 합산됩니다.</p>
                 </div>
             </section>
         </main>
     </div>
 
     <script>
-        // 시나리오 및 기업 데이터 생략 (기존 동일)
-        const scenario = { round1: { key: "1004", rates: { BAUL: 1.35, SOLOMAN: 1.10, DAWITH: 0.85, AMAJOSEPH: 1.00, CHANEL: 1.15, LUKEBIO: 0.80, SAMSON: 1.25 } }, round2: { key: "5520", rates: { BAUL: 0.65, SOLOMAN: 1.45, DAWITH: 1.55, AMAJOSEPH: 0.90, CHANEL: 1.20, LUKEBIO: 1.10, SAMSON: 0.75 } }, round3: { key: "7788", rates: { BAUL: 0.95, SOLOMAN: 0.75, DAWITH: 0.70, AMAJOSEPH: 1.40, CHANEL: 1.15, LUKEBIO: 1.85, SAMSON: 0.85 } }, round4: { key: "0404", rates: { BAUL: 1.65, SOLOMAN: 1.45, DAWITH: 1.05, AMAJOSEPH: 0.85, CHANEL: 0.55, LUKEBIO: 0.75, SAMSON: 1.10 } }, round5: { key: "8282", rates: { BAUL: 0.55, SOLOMAN: 1.15, DAWITH: 1.35, AMAJOSEPH: 0.65, CHANEL: 0.90, LUKEBIO: 0.80, SAMSON: 1.70 } }, round6: { key: "1234", rates: { BAUL: 0.65, SOLOMAN: 0.15, DAWITH: 1.10, AMAJOSEPH: 1.30, CHANEL: 1.60, LUKEBIO: 0.45, SAMSON: 1.95 } }, round7: { key: "9900", rates: { BAUL: 1.55, SOLOMAN: 1.85, DAWITH: 0.75, AMAJOSEPH: 1.20, CHANEL: 0.60, LUKEBIO: 0.90, SAMSON: 1.05 } }, round8: { key: "4444", rates: { BAUL: 0.15, SOLOMAN: 0.20, DAWITH: 1.15, AMAJOSEPH: 0.25, CHANEL: 0.40, LUKEBIO: 1.10, SAMSON: 0.50 } }, round9: { key: "2026", rates: { BAUL: 1.05, SOLOMAN: 1.05, DAWITH: 1.00, AMAJOSEPH: 1.15, CHANEL: 1.05, LUKEBIO: 1.10, SAMSON: 1.10 } } };
-        const companyIds = ["BAUL", "SOLOMAN", "DAWITH", "AMAJOSEPH", "CHANEL", "LUKEBIO", "SAMSON"];
-        
-        // ★ state 구조에 pending 자산과 대기 상태 추가
-        let state = JSON.parse(localStorage.getItem('sw_v12_final')) || { 
-            name: "", round: 1, assets: 10000000, coins: 0, 
-            investments: { BAUL:0, SOLOMAN:0, DAWITH:0, AMAJOSEPH:0, CHANEL:0, LUKEBIO:0, SAMSON:0 }, 
-            isLocked: false, isWaiting: false, nextAssets: 0, purchased: {} 
+        const scenario = {
+            round1: { key: "1004", rates: { BAUL: 1.35, SOLOMAN: 1.10, DAWITH: 0.85, AMAJOSEPH: 1.00, CHANEL: 1.15, LUKEBIO: 0.80, SAMSON: 1.25 } },
+            round2: { key: "5520", rates: { BAUL: 0.65, SOLOMAN: 1.45, DAWITH: 1.55, AMAJOSEPH: 0.90, CHANEL: 1.20, LUKEBIO: 1.10, SAMSON: 0.75 } },
+            round3: { key: "7788", rates: { BAUL: 0.95, SOLOMAN: 0.75, DAWITH: 0.70, AMAJOSEPH: 1.40, CHANEL: 1.15, LUKEBIO: 1.85, SAMSON: 0.85 } },
+            round4: { key: "0404", rates: { BAUL: 1.65, SOLOMAN: 1.45, DAWITH: 1.05, AMAJOSEPH: 0.85, CHANEL: 0.55, LUKEBIO: 0.75, SAMSON: 1.10 } },
+            round5: { key: "8282", rates: { BAUL: 0.55, SOLOMAN: 1.15, DAWITH: 1.35, AMAJOSEPH: 0.65, CHANEL: 0.90, LUKEBIO: 0.80, SAMSON: 1.70 } },
+            round6: { key: "1234", rates: { BAUL: 0.65, SOLOMAN: 0.15, DAWITH: 1.10, AMAJOSEPH: 1.30, CHANEL: 1.60, LUKEBIO: 0.45, SAMSON: 1.95 } },
+            round7: { key: "9900", rates: { BAUL: 1.55, SOLOMAN: 1.85, DAWITH: 0.75, AMAJOSEPH: 1.20, CHANEL: 0.60, LUKEBIO: 0.90, SAMSON: 1.05 } },
+            round8: { key: "4444", rates: { BAUL: 0.15, SOLOMAN: 0.20, DAWITH: 1.15, AMAJOSEPH: 0.25, CHANEL: 0.40, LUKEBIO: 1.10, SAMSON: 0.50 } },
+            round9: { key: "2026", rates: { BAUL: 1.05, SOLOMAN: 1.05, DAWITH: 1.00, AMAJOSEPH: 1.15, CHANEL: 1.05, LUKEBIO: 1.10, SAMSON: 1.10 } }
         };
+        const companyIds = ["BAUL", "SOLOMAN", "DAWITH", "AMAJOSEPH", "CHANEL", "LUKEBIO", "SAMSON"];
+        let state = JSON.parse(localStorage.getItem('sw_v12_final')) || { name: "", round: 1, assets: 10000000, coins: 0, investments: { BAUL:0, SOLOMAN:0, DAWITH:0, AMAJOSEPH:0, CHANEL:0, LUKEBIO:0, SAMSON:0 }, isLocked: false, isWaiting: false, nextAssets: 0, purchased: {} };
         let globalRound = 1;
 
         function sync() {
             localStorage.setItem('sw_v12_final', JSON.stringify(state));
             updateUI();
-            if (db && state.name) db.ref('rankings/' + state.name).update({ 
-                assets: state.assets, round: state.round, coins: state.coins, 
-                isLocked: state.isLocked, isWaiting: state.isWaiting, ts: Date.now() 
-            });
+            if (db && state.name) db.ref('rankings/' + state.name).update({ assets: state.assets, round: state.round, coins: state.coins, isLocked: state.isLocked, isWaiting: state.isWaiting, ts: Date.now() });
         }
 
         function startGame() {
-            const n = document.getElementById('user-name').value;
-            if(!n && !state.name) return alert("팀명을 입력하세요!");
-            if(!state.name) state.name = n;
+            if(!state.name) state.name = document.getElementById('user-name').value;
+            if(!state.name) return alert("팀명 입력!");
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('main-screen').classList.remove('hidden');
             
             if(db) {
-                // 관리자 라운드 감시 리스너
+                // 라운드 동기화 핵심 리스너
                 db.ref('game_settings/currentRound').on('value', snap => { 
-                    const newGlobalRound = snap.val() || 1;
-                    
-                    // ★ [동작 핵심] 관리자가 다음 라운드를 활성화했을 때, 내가 대기 중이었다면 정산 실행
-                    if (newGlobalRound > globalRound && state.isWaiting) {
-                        state.assets = state.nextAssets; // 저장해둔 수익금을 실제 자산으로 교환
-                        state.round = newGlobalRound;
+                    const newGlobal = snap.val() || 1;
+                    // 관리자가 라운드를 올렸는데 내가 정산 대기중이었다면: 수익 합산 및 다음 라운드 진입
+                    if (newGlobal > globalRound && state.isWaiting) {
+                        state.assets = state.nextAssets;
+                        state.round = newGlobal;
                         state.isWaiting = false;
                         state.isLocked = false;
                         state.investments = { BAUL:0, SOLOMAN:0, DAWITH:0, AMAJOSEPH:0, CHANEL:0, LUKEBIO:0, SAMSON:0 };
-                        alert("새로운 라운드가 시작되었습니다! 수익이 정산되었습니다.");
                         sync();
+                        alert("새 라운드 시작! 정산이 완료되었습니다.");
                     }
-                    globalRound = newGlobalRound;
+                    globalRound = newGlobal;
                     renderCompanies(); updateUI(); 
                 });
 
-                // 내 데이터 감시 (수정허용 등)
                 db.ref('rankings/' + state.name).on('value', snap => {
-                    if(!snap.exists() && state.name !== "") { localStorage.removeItem('sw_v12_final'); location.reload(); return; }
                     const d = snap.val();
                     if(d) {
                         state.isLocked = d.isLocked || false;
@@ -134,21 +129,15 @@
 
         function renderCompanies() {
             const list = document.getElementById('company-list');
-            // 확정했거나 대기 중이면 입력 불가
             const inputDisabled = state.isLocked || state.isWaiting;
-
             list.innerHTML = companyIds.map(id => `
                 <div class="flex items-center gap-3 ${inputDisabled ? 'opacity-60' : ''}">
                     <span class="w-16 font-black text-slate-500 text-[11px] uppercase">${id}</span>
                     <div class="flex-1 flex items-center bg-white/5 rounded-xl px-4 border ${inputDisabled ? 'border-white/5' : 'border-emerald-500/50'}">
-                        <input type="number" oninput="updateInv('${id}', this.value)" 
-                               ${inputDisabled ? 'disabled' : ''} 
-                               value="${(state.investments[id]||0)/10000}" 
-                               class="w-full bg-transparent text-right font-black mono text-slate-100 py-3 outline-none text-sm" placeholder="0">
+                        <input type="number" oninput="updateInv('${id}', this.value)" ${inputDisabled ? 'disabled' : ''} value="${(state.investments[id]||0)/10000}" class="w-full bg-transparent text-right font-black mono text-slate-100 py-3 outline-none text-sm">
                         <span class="text-slate-400 font-bold text-[10px] ml-2">만</span>
                     </div>
-                </div>
-            `).join('');
+                </div>`).join('');
             
             const btn = document.getElementById('lock-btn');
             if(inputDisabled) {
@@ -163,35 +152,21 @@
                 btn.disabled = false;
                 document.getElementById('settlement-section').classList.add('hidden');
             }
-
-            // 정산 UI 제어
             document.getElementById('settle-inputs').classList.toggle('hidden', state.isWaiting);
             document.getElementById('waiting-msg').classList.toggle('hidden', !state.isWaiting);
-            document.getElementById('settle-title').innerText = state.isWaiting ? "다음 라운드 진입 대기" : "수익 정산 시스템";
         }
 
         function updateInv(id, val) { state.investments[id] = (parseInt(val)||0) * 10000; localStorage.setItem('sw_v12_final', JSON.stringify(state)); }
-        
-        function lockInvestment() {
-            let total = Object.values(state.investments).reduce((a,b)=>a+b, 0);
-            if(total > state.assets) return alert("자산 부족!");
-            if(total <= 0) return alert("투자금을 입력하세요!");
-            state.isLocked = true; sync();
-        }
-
+        function lockInvestment() { state.isLocked = true; sync(); }
         function processSettlement() {
             const key = document.getElementById('round-key').value;
-            const rData = scenario['round' + globalRound]; // ★ 현재 라운드(투자 당시) 배율 사용
-            if(!rData || key !== rData.key) return alert("보안코드가 틀렸습니다.");
-            
-            // ★ [동작 핵심] 돈을 즉시 바꾸지 않고 nextAssets에 저장만 함
+            const rData = scenario['round' + globalRound];
+            if(!rData || key !== rData.key) return alert("코드 불일치!");
             let inv = 0; let prof = 0;
             Object.entries(state.investments).forEach(([id, val]) => { inv += val; prof += val * (rData.rates[id] || 1); });
-            
             state.nextAssets = Math.floor((state.assets - inv) + prof);
-            state.isWaiting = true; // 대기 상태 진입
-            document.getElementById('round-key').value = ""; 
-            sync(); alert("정산 코드가 확인되었습니다. 관리자가 다음 라운드를 시작하면 수익이 반영됩니다.");
+            state.isWaiting = true; 
+            sync(); alert("코인 확인! 관리자가 라운드를 넘기면 자산이 반영됩니다.");
         }
 
         function updateUI() {
@@ -201,7 +176,7 @@
             document.getElementById('display-coins').innerText = state.coins;
         }
 
-        // QR 스캐너 등 생략...
+        function openScanner() { /* QR 관련 로직 생략 */ }
         let db = null; try { const cfg = { apiKey: "AIzaSyBJ-Z1E9oCtf-4lXZ4kXNB7g2wDpzQRp20", databaseURL: "https://stock-war-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "stock-war" }; firebase.initializeApp(cfg); db = firebase.database(); } catch(e){}
         if(state.name) startGame();
     </script>
