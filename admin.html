@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>MASTER TERMINAL</title>
+    <title>STOCK WAR - MASTER PANEL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
@@ -18,7 +18,7 @@
     <div class="flex justify-between items-end mb-12">
         <div>
             <h1 class="text-6xl font-black italic text-emerald-500 tracking-tighter">MASTER PANEL</h1>
-            <p class="text-slate-500 font-bold uppercase tracking-widest mt-2">현재 진행 라운드: <span id="master-round" class="text-white mono">ROUND 1</span></p>
+            <p class="text-slate-500 font-bold uppercase tracking-widest mt-2">현재 진행 라운드: <span id="master-round-num" class="text-white mono">ROUND -</span></p>
         </div>
         <div class="flex gap-4">
             <button onclick="nextRound()" class="bg-emerald-500 text-[#020617] px-8 py-4 rounded-2xl font-black text-lg shadow-[0_0_25px_rgba(52,211,153,0.2)] active:scale-95 transition-all">다음 라운드 활성화 🚀</button>
@@ -30,7 +30,7 @@
         <div class="lg:col-span-2 glass rounded-[3rem] overflow-hidden shadow-2xl">
             <table class="w-full text-left">
                 <thead class="bg-white/5 text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
-                    <tr><th class="p-8">순위</th><th>노드명</th><th>총 자산</th><th>정산 상태</th><th>매니지먼트</th></tr>
+                    <tr><th class="p-8">순위</th><th>노드명</th><th>총 자산</th><th>투자 상태</th><th>매니지먼트</th></tr>
                 </thead>
                 <tbody id="rank-list"></tbody>
             </table>
@@ -38,7 +38,7 @@
 
         <div class="glass rounded-[3rem] p-8">
             <h2 class="text-xl font-black mb-6 text-amber-500 italic">🔐 보안 암호 리스트</h2>
-            <div class="space-y-3">
+            <div class="space-y-3 opacity-60">
                 <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5 text-xs"><span>ROUND 1</span><span class="mono text-emerald-400 font-black">1004</span></div>
                 <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5 text-xs"><span>ROUND 2</span><span class="mono text-emerald-400 font-black">5520</span></div>
                 <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5 text-xs"><span>ROUND 3</span><span class="mono text-emerald-400 font-black">7788</span></div>
@@ -57,39 +57,49 @@
         firebase.initializeApp(cfg); const db = firebase.database();
         let currentRound = 1;
 
+        // 라운드 정보 실시간 동기화 버그 수정
         db.ref('game_settings/currentRound').on('value', snap => {
             currentRound = snap.val() || 1;
-            document.getElementById('master-round').innerText = "ROUND " + currentRound;
+            document.getElementById('master-round-num').innerText = "ROUND " + currentRound;
         });
 
+        // 랭킹 리스트 및 매니지먼트 (자산순 정렬 반영)
         db.ref('rankings').on('value', (snap) => {
             const data = snap.val(); if(!data) { document.getElementById('rank-list').innerHTML = ""; return; }
             const sorted = Object.entries(data).sort((a,b)=>b[1].assets - a[1].assets);
             document.getElementById('rank-list').innerHTML = sorted.map(([name, info], i) => {
                 const isSettled = info.round > currentRound;
+                const isLocked = info.isLocked === true;
                 return `
-                <tr class="border-t border-white/5">
+                <tr class="border-t border-white/5 ${isSettled ? 'opacity-30' : ''}">
                     <td class="p-8 font-black text-4xl text-slate-700 italic mono">${i+1}</td>
                     <td class="text-xl font-bold">${name}</td>
                     <td class="text-2xl font-black text-emerald-400 mono">₩ ${info.assets.toLocaleString()}</td>
                     <td class="py-4">
-                        <span class="${isSettled?'text-emerald-500':'text-red-500 animate-pulse'} font-black text-[10px] uppercase tracking-widest">
-                            ${isSettled?'[정산완료]':'[정산대기]'}
+                        <span class="${isLocked ? 'text-emerald-500' : 'text-red-500 animate-pulse'} font-black text-[10px] uppercase tracking-widest">
+                            ${isLocked ? '[확정완료]' : '[입력중...]'}
                         </span>
                     </td>
                     <td class="pr-8">
-                        <div class="flex gap-2">
-                            <button onclick="addCoin('${name}', 1)" class="bg-white/5 p-2 rounded-lg text-[10px] font-black">+1</button>
-                            <button onclick="addCoin('${name}', 3)" class="bg-white/5 p-2 rounded-lg text-[10px] font-black">+3</button>
-                            <button onclick="editBal('${name}', ${info.assets})" class="bg-white/5 p-2 rounded-lg text-[10px] font-black">수정</button>
-                            <button onclick="kick('${name}')" class="bg-red-900/20 text-red-500 p-2 rounded-lg text-[10px] font-black">추방</button>
+                        <div class="flex gap-1">
+                            <button onclick="setLock('${name}', true)" class="bg-emerald-900/30 text-emerald-500 p-2 rounded-lg text-[9px] font-black border border-emerald-500/20">강제확정</button>
+                            <button onclick="setLock('${name}', false)" class="bg-amber-900/30 text-amber-500 p-2 rounded-lg text-[9px] font-black border border-amber-500/20">수정허용</button>
+                            <button onclick="addCoin('${name}', 1)" class="bg-white/5 p-2 rounded-lg text-[9px] font-black">+1</button>
+                            <button onclick="editBal('${name}', ${info.assets})" class="bg-white/5 p-2 rounded-lg text-[9px] font-black">수정</button>
+                            <button onclick="kick('${name}')" class="bg-red-900/20 text-red-500 p-2 rounded-lg text-[9px] font-black">추방</button>
                         </div>
                     </td>
                 </tr>`;
             }).join('');
         });
 
-        function nextRound() { if(confirm(`ROUND ${currentRound+1}을 시작할까요?`)) db.ref('game_settings').update({ currentRound: currentRound + 1 }); }
+        // 강제 확정 및 해제 통합 함수
+        function setLock(name, status) {
+            const msg = status ? "강제로 확정하시겠습니까?" : "투자를 다시 수정하게 합니까?";
+            if(confirm(`${name} 노드, ${msg}`)) db.ref('rankings/' + name).update({ isLocked: status });
+        }
+
+        function nextRound() { if(confirm(`ROUND ${currentRound+1}을 활성화할까요?`)) db.ref('game_settings').update({ currentRound: currentRound + 1 }); }
         function addCoin(n, a) { db.ref('rankings/'+n+'/coins').transaction(c => (c||0)+a); }
         function kick(n) { if(confirm(`${n} 팀을 추방할까요?`)) db.ref('rankings/'+n).remove(); }
         function globalReset() { if(confirm("데이터를 전체 초기화합니다.")) { db.ref('rankings').remove(); db.ref('game_settings').update({ currentRound: 1 }); } }
