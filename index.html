@@ -41,7 +41,7 @@
                     <p class="mt-2 text-[10px] font-bold text-slate-400">Coin <span id="display-coins" class="text-amber-400 text-lg ml-1 mono">0</span></p>
                 </div>
             </div>
-            <button onclick="openScanner()" class="w-full bg-white/5 border border-white/10 text-slate-200 py-3 rounded-2xl font-bold text-xs">기밀 데이터 스캔 (QR)</button>
+            <button onclick="openScanner()" class="w-full bg-white/5 border border-white/10 text-slate-200 py-3 rounded-2xl font-bold text-xs active:scale-95">기밀 데이터 스캔 (QR)</button>
         </header>
 
         <main class="p-4 space-y-4 flex-1">
@@ -82,7 +82,15 @@
             round9: { key: "2026", rates: { BAUL: 1.05, SOLOMAN: 1.05, DAWITH: 1.00, AMAJOSEPH: 1.15, CHANEL: 1.05, LUKEBIO: 1.10, SAMSON: 1.10 } }
         };
         const companyIds = ["BAUL", "SOLOMAN", "DAWITH", "AMAJOSEPH", "CHANEL", "LUKEBIO", "SAMSON"];
-        let state = JSON.parse(localStorage.getItem('sw_v12_final')) || { name: "", round: 1, assets: 10000000, coins: 0, investments: { BAUL:0, SOLOMAN:0, DAWITH:0, AMAJOSEPH:0, CHANEL:0, LUKEBIO:0, SAMSON:0 }, isLocked: false, isWaiting: false, nextAssets: 0, purchased: {} };
+        
+        // ★ 초기 상태 객체 (리셋 시 이 값으로 돌아감)
+        const initialState = { 
+            name: "", round: 1, assets: 10000000, coins: 0, 
+            investments: { BAUL:0, SOLOMAN:0, DAWITH:0, AMAJOSEPH:0, CHANEL:0, LUKEBIO:0, SAMSON:0 }, 
+            isLocked: false, isWaiting: false, nextAssets: 0, purchased: {} 
+        };
+        
+        let state = JSON.parse(localStorage.getItem('sw_v12_final')) || {...initialState};
         let globalRound = 1;
 
         function sync() {
@@ -98,8 +106,14 @@
             document.getElementById('main-screen').classList.remove('hidden');
             
             if(db) {
+                // 라운드 및 리셋 감시
                 db.ref('game_settings/currentRound').on('value', snap => { 
                     const newGlobal = snap.val() || 1;
+                    // 리셋으로 인한 라운드 역행 시 로컬 데이터 초기화
+                    if (newGlobal < globalRound) {
+                        state = {...initialState, name: state.name}; // 이름만 남기고 초기화
+                        sync();
+                    }
                     if (newGlobal > globalRound && state.isWaiting) {
                         state.assets = state.nextAssets;
                         state.round = newGlobal;
@@ -113,12 +127,19 @@
                 });
 
                 db.ref('rankings/' + state.name).on('value', snap => {
+                    // ★ 전체 리셋 또는 추방 감지 (핵심 로직)
+                    if(!snap.exists() && state.name !== "") { 
+                        alert("시스템이 초기화되었거나 추방되었습니다. 처음으로 돌아갑니다.");
+                        localStorage.removeItem('sw_v12_final'); 
+                        location.reload(); 
+                        return; 
+                    }
                     const d = snap.val();
                     if(d) {
                         state.isLocked = d.isLocked || false;
                         state.isWaiting = d.isWaiting || false;
                         state.assets = d.assets || state.assets;
-                        state.coins = d.coins || 0; // 코인 실시간 반영
+                        state.coins = d.coins || 0;
                         renderCompanies(); updateUI();
                     }
                 });
@@ -164,7 +185,7 @@
             Object.entries(state.investments).forEach(([id, val]) => { inv += val; prof += val * (rData.rates[id] || 1); });
             state.nextAssets = Math.floor((state.assets - inv) + prof);
             state.isWaiting = true; 
-            sync(); alert("코인 확인! 관리자가 라운드를 넘기면 자산이 반영됩니다.");
+            sync(); alert("정산 코드가 확인되었습니다. 관리자가 라운드를 활성화하면 수익이 반영됩니다.");
         }
 
         function updateUI() {
@@ -174,7 +195,7 @@
             document.getElementById('display-coins').innerText = state.coins;
         }
 
-        function openScanner() { /* QR 관련 로직 생략 */ }
+        function openScanner() { /* QR 관련 생략 */ }
         let db = null; try { const cfg = { apiKey: "AIzaSyBJ-Z1E9oCtf-4lXZ4kXNB7g2wDpzQRp20", databaseURL: "https://stock-war-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "stock-war" }; firebase.initializeApp(cfg); db = firebase.database(); } catch(e){}
         if(state.name) startGame();
     </script>
