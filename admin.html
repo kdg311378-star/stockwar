@@ -80,11 +80,10 @@
                     </td>
                     <td class="pr-8">
                         <div class="flex gap-1">
-                            <button onclick="setLock('${name}', true)" class="bg-emerald-900/30 text-emerald-500 p-2 rounded-lg text-[9px] font-black border border-emerald-500/20">강제확정</button>
                             <button onclick="setLock('${name}', false)" class="bg-amber-900/30 text-amber-500 p-2 rounded-lg text-[9px] font-black border border-amber-500/20">수정허용</button>
                             <button onclick="addCoin('${name}', 1)" class="bg-white/5 p-2 rounded-lg text-[9px] font-black text-amber-400 border border-white/5">+1🪙</button>
-                            <button onclick="editBal('${name}', ${info.assets})" class="bg-white/5 p-2 rounded-lg text-[9px] font-black">수정</button>
-                            <button onclick="kick('${name}')" class="bg-red-900/20 text-red-500 p-2 rounded-lg text-[9px] font-black">추방</button>
+                            <button onclick="editBal('${name}', ${info.assets})" class="bg-white/5 p-2 rounded-lg text-[9px] font-black">자산수정</button>
+                            <button onclick="kick('${name}')" class="bg-red-900/20 text-red-500 p-2 rounded-lg text-[9px] font-black border border-red-500/20">추방</button>
                         </div>
                     </td>
                 </tr>`;
@@ -94,8 +93,15 @@
         function setLock(name, status) { db.ref('rankings/' + name).update({ isLocked: status, isWaiting: false }); }
         function nextRound() { if(confirm(`ROUND ${currentRound+1}을 활성화할까요?`)) db.ref('game_settings').update({ currentRound: currentRound + 1 }); }
         function addCoin(n, a) { db.ref('rankings/'+n+'/coins').transaction(c => (c||0)+a); }
-        function kick(n) { if(confirm(`${n} 팀을 추방할까요?`)) db.ref('rankings/'+n).remove(); }
-        function globalReset() { if(confirm("데이터를 전체 초기화합니다.")) { db.ref('rankings').remove(); db.ref('game_settings').update({ currentRound: 1 }); } }
+        function kick(n) { if(confirm(`${n} 팀을 추방할까요?`)) { db.ref('rankings/' + n).remove(); } }
+        
+        // ★ 전체 리셋 기능: 모든 유저 데이터를 삭제하고 라운드를 1로 초기화
+        function globalReset() { 
+            if(confirm("모든 데이터를 삭제하고 게임을 초기화합니까? 사용자는 첫 화면으로 돌아갑니다.")) { 
+                db.ref('rankings').remove(); 
+                db.ref('game_settings').update({ currentRound: 1 }); 
+            } 
+        }
         function editBal(n, c) { const v = prompt(`${n} 팀 자산 수정`, c); if(v) db.ref('rankings/'+n).update({ assets: parseInt(v) }); }
     </script>
 </body>
