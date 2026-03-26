@@ -98,10 +98,8 @@
             document.getElementById('main-screen').classList.remove('hidden');
             
             if(db) {
-                // 라운드 동기화 핵심 리스너
                 db.ref('game_settings/currentRound').on('value', snap => { 
                     const newGlobal = snap.val() || 1;
-                    // 관리자가 라운드를 올렸는데 내가 정산 대기중이었다면: 수익 합산 및 다음 라운드 진입
                     if (newGlobal > globalRound && state.isWaiting) {
                         state.assets = state.nextAssets;
                         state.round = newGlobal;
@@ -109,7 +107,6 @@
                         state.isLocked = false;
                         state.investments = { BAUL:0, SOLOMAN:0, DAWITH:0, AMAJOSEPH:0, CHANEL:0, LUKEBIO:0, SAMSON:0 };
                         sync();
-                        alert("새 라운드 시작! 정산이 완료되었습니다.");
                     }
                     globalRound = newGlobal;
                     renderCompanies(); updateUI(); 
@@ -121,6 +118,7 @@
                         state.isLocked = d.isLocked || false;
                         state.isWaiting = d.isWaiting || false;
                         state.assets = d.assets || state.assets;
+                        state.coins = d.coins || 0; // 코인 실시간 반영
                         renderCompanies(); updateUI();
                     }
                 });
