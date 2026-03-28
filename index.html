@@ -1,203 +1,101 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STOCK WAR - TERMINAL</title>
+    <title>STOCK WAR - MASTER PANEL</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&display=swap');
-        body { font-family: 'Pretendard', sans-serif; background-color: #020617; color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        body{ font-family:'Pretendard'; background-color:#020617; color:#f1f5f9; }
         .mono { font-family: 'JetBrains Mono', monospace; }
-        .glass { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        input[type="number"]::-webkit-inner-spin-button { display: none; }
+        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
     </style>
 </head>
-<body class="antialiased overflow-x-hidden">
+<body class="p-10 antialiased overflow-x-hidden">
+    <div class="flex justify-between items-end mb-12">
+        <div>
+            <h1 class="text-6xl font-black italic text-emerald-500 tracking-tighter">MASTER PANEL</h1>
+            <p class="text-slate-500 font-bold uppercase tracking-widest mt-2">현재 진행: <span id="master-round-num" class="text-white mono">ROUND -</span></p>
+        </div>
+        <div class="flex gap-4">
+            <button onclick="nextRound()" class="bg-emerald-500 text-[#020617] px-8 py-4 rounded-2xl font-black text-lg shadow-[0_0_25px_rgba(52,211,153,0.2)] active:scale-95 transition-all">다음 라운드 활성화 🚀</button>
+            <button onclick="globalReset()" class="bg-red-900/30 text-red-500 border border-red-500/20 px-6 py-4 rounded-2xl font-bold text-xs">전체 리셋</button>
+        </div>
+    </div>
 
-    <div id="setup-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-8 bg-[#020617]">
-        <div class="w-full max-w-xs text-center">
-            <h1 class="text-5xl font-black mb-1 italic text-emerald-400 tracking-tighter">STOCK WAR</h1>
-            <div class="space-y-4 mt-12">
-                <input type="text" id="user-name" placeholder="팀명 입력" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center font-bold outline-none focus:border-emerald-500 text-white">
-                <button onclick="startGame()" class="w-full bg-emerald-500 text-[#020617] p-4 rounded-2xl font-black text-lg">시스템 접속</button>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 glass rounded-[3rem] overflow-hidden shadow-2xl">
+            <table class="w-full text-left">
+                <thead class="bg-white/5 text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
+                    <tr><th class="p-8">순위</th><th>노드명</th><th>총 자산</th><th>투자 상태</th><th>매니지먼트</th></tr>
+                </thead>
+                <tbody id="rank-list"></tbody>
+            </table>
+        </div>
+
+        <div class="glass rounded-[3rem] p-8">
+            <h2 class="text-xl font-black mb-6 text-amber-500 italic">🔐 보안코드 리스트</h2>
+            <div id="pw-list" class="space-y-3 opacity-60 text-xs">
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5"><span>ROUND 1</span><span class="mono text-emerald-400 font-black">1004</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5"><span>ROUND 2</span><span class="mono text-emerald-400 font-black">5520</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5"><span>ROUND 3</span><span class="mono text-emerald-400 font-black">7788</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5"><span>ROUND 4</span><span class="mono text-emerald-400 font-black">0404</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5"><span>ROUND 5</span><span class="mono text-emerald-400 font-black">8282</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5"><span>ROUND 6</span><span class="mono text-emerald-400 font-black">1234</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5"><span>ROUND 7</span><span class="mono text-emerald-400 font-black">9900</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5"><span>ROUND 8</span><span class="mono text-emerald-400 font-black">4444</span></div>
+                <div class="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5"><span>ROUND 9</span><span class="mono text-emerald-400 font-black">2026</span></div>
             </div>
         </div>
     </div>
 
-    <div id="main-screen" class="hidden min-h-screen flex flex-col">
-        <header class="sticky top-0 z-40 p-4 glass rounded-b-[2rem] shadow-2xl">
-            <div class="flex justify-between items-start mb-4">
-                <div class="space-y-1">
-                    <p id="display-name" class="text-slate-500 text-[10px] font-black uppercase">Node: -</p>
-                    <h2 class="text-2xl font-extrabold mono text-emerald-400 italic">₩ <span id="display-assets">0</span></h2>
-                </div>
-                <div class="text-right">
-                    <div id="display-round" class="bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full text-[10px] font-black mono border border-emerald-500/20 italic">ROUND 1</div>
-                    <p class="mt-2 text-[10px] font-bold text-slate-400">Coin <span id="display-coins" class="text-amber-400 text-lg ml-1 mono">0</span></p>
-                </div>
-            </div>
-            <button onclick="openScanner()" class="w-full bg-white/5 border border-white/10 text-slate-200 py-3 rounded-2xl font-bold text-xs active:scale-95">기밀 데이터 스캔 (QR)</button>
-        </header>
-
-        <main class="p-4 space-y-4 flex-1">
-            <section id="info-section" class="hidden p-5 glass rounded-[2.5rem] border-amber-500/30 border shadow-xl">
-                <div class="text-amber-400 font-black text-[10px] uppercase mb-2">실시간 기밀 브리핑</div>
-                <div id="info-content" class="text-[12px] font-bold text-slate-300"></div>
-            </section>
-
-            <section class="p-6 glass rounded-[2.5rem]">
-                <div class="flex justify-between items-center mb-6"><h3 class="font-black text-slate-400 text-[10px] tracking-widest uppercase italic">Portfolio Config</h3><span class="text-[9px] text-slate-600 font-bold">(단위: 만 원)</span></div>
-                <div id="company-list" class="space-y-3"></div>
-                <button id="lock-btn" onclick="lockInvestment()" class="w-full mt-8 bg-white text-[#020617] py-4 rounded-2xl font-black text-xs tracking-widest active:scale-95">투자 포지션 확정</button>
-            </section>
-
-            <section id="settlement-section" class="hidden p-6 glass rounded-[2.5rem] border-emerald-500/30 border">
-                <h3 id="settle-title" class="font-black text-emerald-400 text-[10px] tracking-widest uppercase mb-4 italic text-center">수익 정산 시스템</h3>
-                <div id="settle-inputs" class="flex flex-col gap-3">
-                    <input type="number" id="round-key" placeholder="보안코드 4자리" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-center mono text-xl font-black outline-none focus:border-emerald-500 text-white">
-                    <button id="settle-btn" onclick="processSettlement()" class="w-full bg-emerald-500 text-[#020617] py-4 rounded-2xl font-black text-sm active:scale-95">정산하기</button>
-                </div>
-                <div id="waiting-msg" class="hidden text-center py-4">
-                    <p class="text-amber-400 font-black text-xs animate-pulse">정산 완료! 관리자가 다음 라운드를 시작하면 수익이 합산됩니다.</p>
-                </div>
-            </section>
-        </main>
-    </div>
-
     <script>
-        const scenario = {
-            round1: { key: "1004", rates: { BAUL: 1.35, SOLOMAN: 1.10, DAWITH: 0.85, AMAJOSEPH: 1.00, CHANEL: 1.15, LUKEBIO: 0.80, SAMSON: 1.25 } },
-            round2: { key: "5520", rates: { BAUL: 0.65, SOLOMAN: 1.45, DAWITH: 1.55, AMAJOSEPH: 0.90, CHANEL: 1.20, LUKEBIO: 1.10, SAMSON: 0.75 } },
-            round3: { key: "7788", rates: { BAUL: 0.95, SOLOMAN: 0.75, DAWITH: 0.70, AMAJOSEPH: 1.40, CHANEL: 1.15, LUKEBIO: 1.85, SAMSON: 0.85 } },
-            round4: { key: "0404", rates: { BAUL: 1.65, SOLOMAN: 1.45, DAWITH: 1.05, AMAJOSEPH: 0.85, CHANEL: 0.55, LUKEBIO: 0.75, SAMSON: 1.10 } },
-            round5: { key: "8282", rates: { BAUL: 0.55, SOLOMAN: 1.15, DAWITH: 1.35, AMAJOSEPH: 0.65, CHANEL: 0.90, LUKEBIO: 0.80, SAMSON: 1.70 } },
-            round6: { key: "1234", rates: { BAUL: 0.65, SOLOMAN: 0.15, DAWITH: 1.10, AMAJOSEPH: 1.30, CHANEL: 1.60, LUKEBIO: 0.45, SAMSON: 1.95 } },
-            round7: { key: "9900", rates: { BAUL: 1.55, SOLOMAN: 1.85, DAWITH: 0.75, AMAJOSEPH: 1.20, CHANEL: 0.60, LUKEBIO: 0.90, SAMSON: 1.05 } },
-            round8: { key: "4444", rates: { BAUL: 0.15, SOLOMAN: 0.20, DAWITH: 1.15, AMAJOSEPH: 0.25, CHANEL: 0.40, LUKEBIO: 1.10, SAMSON: 0.50 } },
-            round9: { key: "2026", rates: { BAUL: 1.05, SOLOMAN: 1.05, DAWITH: 1.00, AMAJOSEPH: 1.15, CHANEL: 1.05, LUKEBIO: 1.10, SAMSON: 1.10 } }
-        };
-        const companyIds = ["BAUL", "SOLOMAN", "DAWITH", "AMAJOSEPH", "CHANEL", "LUKEBIO", "SAMSON"];
-        
-        // ★ 초기 상태 객체 (리셋 시 이 값으로 돌아감)
-        const initialState = { 
-            name: "", round: 1, assets: 10000000, coins: 0, 
-            investments: { BAUL:0, SOLOMAN:0, DAWITH:0, AMAJOSEPH:0, CHANEL:0, LUKEBIO:0, SAMSON:0 }, 
-            isLocked: false, isWaiting: false, nextAssets: 0, purchased: {} 
-        };
-        
-        let state = JSON.parse(localStorage.getItem('sw_v12_final')) || {...initialState};
-        let globalRound = 1;
+        const cfg = { apiKey: "AIzaSyBJ-Z1E9oCtf-4lXZ4kXNB7g2wDpzQRp20", databaseURL: "https://stock-war-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "stock-war" };
+        firebase.initializeApp(cfg); const db = firebase.database();
+        let currentRound = 1;
 
-        function sync() {
-            localStorage.setItem('sw_v12_final', JSON.stringify(state));
-            updateUI();
-            if (db && state.name) db.ref('rankings/' + state.name).update({ assets: state.assets, round: state.round, coins: state.coins, isLocked: state.isLocked, isWaiting: state.isWaiting, ts: Date.now() });
-        }
+        db.ref('game_settings/currentRound').on('value', snap => {
+            currentRound = snap.val() || 1;
+            document.getElementById('master-round-num').innerText = "ROUND " + currentRound;
+        });
 
-        function startGame() {
-            if(!state.name) state.name = document.getElementById('user-name').value;
-            if(!state.name) return alert("팀명 입력!");
-            document.getElementById('setup-screen').classList.add('hidden');
-            document.getElementById('main-screen').classList.remove('hidden');
-            
-            if(db) {
-                // 라운드 및 리셋 감시
-                db.ref('game_settings/currentRound').on('value', snap => { 
-                    const newGlobal = snap.val() || 1;
-                    // 리셋으로 인한 라운드 역행 시 로컬 데이터 초기화
-                    if (newGlobal < globalRound) {
-                        state = {...initialState, name: state.name}; // 이름만 남기고 초기화
-                        sync();
-                    }
-                    if (newGlobal > globalRound && state.isWaiting) {
-                        state.assets = state.nextAssets;
-                        state.round = newGlobal;
-                        state.isWaiting = false;
-                        state.isLocked = false;
-                        state.investments = { BAUL:0, SOLOMAN:0, DAWITH:0, AMAJOSEPH:0, CHANEL:0, LUKEBIO:0, SAMSON:0 };
-                        sync();
-                    }
-                    globalRound = newGlobal;
-                    renderCompanies(); updateUI(); 
-                });
+        db.ref('rankings').on('value', (snap) => {
+            const data = snap.val(); if(!data) { document.getElementById('rank-list').innerHTML = ""; return; }
+            const sorted = Object.entries(data).sort((a,b)=>b[1].assets - a[1].assets);
+            document.getElementById('rank-list').innerHTML = sorted.map(([name, info], i) => {
+                const isWaiting = info.isWaiting === true;
+                const isLocked = info.isLocked === true;
+                return `
+                <tr class="border-t border-white/5 ${isWaiting ? 'opacity-30' : ''}">
+                    <td class="p-8 font-black text-4xl text-slate-700 italic mono">${i+1}</td>
+                    <td class="text-xl font-bold">${name}</td>
+                    <td class="text-2xl font-black text-emerald-400 mono">₩ ${info.assets.toLocaleString()}</td>
+                    <td class="py-4">
+                        <span class="${isWaiting ? 'text-amber-500' : (isLocked ? 'text-emerald-500' : 'text-red-500 animate-pulse')} font-black text-[10px] uppercase tracking-widest">
+                            ${isWaiting ? '[정산대기]' : (isLocked ? '[확정완료]' : '[입력중...]')}
+                        </span>
+                    </td>
+                    <td class="pr-8">
+                        <div class="flex gap-1">
+                            <button onclick="setLock('${name}', false)" class="bg-amber-900/30 text-amber-500 p-2 rounded-lg text-[9px] font-black border border-amber-500/20">수정허용</button>
+                            <button onclick="addCoin('${name}', 1)" class="bg-white/5 p-2 rounded-lg text-[9px] font-black text-amber-400 border border-white/5">+1🪙</button>
+                            <button onclick="editBal('${name}', ${info.assets})" class="bg-white/5 p-2 rounded-lg text-[9px] font-black">자산수정</button>
+                            <button onclick="kick('${name}')" class="bg-red-900/20 text-red-500 p-2 rounded-lg text-[9px] font-black border border-red-500/20">추방</button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        });
 
-                db.ref('rankings/' + state.name).on('value', snap => {
-                    // ★ 전체 리셋 또는 추방 감지 (핵심 로직)
-                    if(!snap.exists() && state.name !== "") { 
-                        alert("시스템이 초기화되었거나 추방되었습니다. 처음으로 돌아갑니다.");
-                        localStorage.removeItem('sw_v12_final'); 
-                        location.reload(); 
-                        return; 
-                    }
-                    const d = snap.val();
-                    if(d) {
-                        state.isLocked = d.isLocked || false;
-                        state.isWaiting = d.isWaiting || false;
-                        state.assets = d.assets || state.assets;
-                        state.coins = d.coins || 0;
-                        renderCompanies(); updateUI();
-                    }
-                });
-            }
-        }
-
-        function renderCompanies() {
-            const list = document.getElementById('company-list');
-            const inputDisabled = state.isLocked || state.isWaiting;
-            list.innerHTML = companyIds.map(id => `
-                <div class="flex items-center gap-3 ${inputDisabled ? 'opacity-60' : ''}">
-                    <span class="w-16 font-black text-slate-500 text-[11px] uppercase">${id}</span>
-                    <div class="flex-1 flex items-center bg-white/5 rounded-xl px-4 border ${inputDisabled ? 'border-white/5' : 'border-emerald-500/50'}">
-                        <input type="number" oninput="updateInv('${id}', this.value)" ${inputDisabled ? 'disabled' : ''} value="${(state.investments[id]||0)/10000}" class="w-full bg-transparent text-right font-black mono text-slate-100 py-3 outline-none text-sm">
-                        <span class="text-slate-400 font-bold text-[10px] ml-2">만</span>
-                    </div>
-                </div>`).join('');
-            
-            const btn = document.getElementById('lock-btn');
-            if(inputDisabled) {
-                btn.innerText = state.isWaiting ? "정산 완료 (대기 중)" : "포지션 확정 상태";
-                btn.className = "w-full mt-6 bg-slate-800 text-slate-500 py-4 rounded-2xl font-black text-[10px]";
-                btn.disabled = true;
-                if(!state.isWaiting) document.getElementById('settlement-section').classList.remove('hidden');
-                else document.getElementById('settlement-section').classList.add('hidden');
-            } else {
-                btn.innerText = "투자 포지션 확정";
-                btn.className = "w-full mt-6 bg-white text-[#020617] py-4 rounded-2xl font-black text-[10px] shadow-xl";
-                btn.disabled = false;
-                document.getElementById('settlement-section').classList.add('hidden');
-            }
-            document.getElementById('settle-inputs').classList.toggle('hidden', state.isWaiting);
-            document.getElementById('waiting-msg').classList.toggle('hidden', !state.isWaiting);
-        }
-
-        function updateInv(id, val) { state.investments[id] = (parseInt(val)||0) * 10000; localStorage.setItem('sw_v12_final', JSON.stringify(state)); }
-        function lockInvestment() { state.isLocked = true; sync(); }
-        function processSettlement() {
-            const key = document.getElementById('round-key').value;
-            const rData = scenario['round' + globalRound];
-            if(!rData || key !== rData.key) return alert("코드 불일치!");
-            let inv = 0; let prof = 0;
-            Object.entries(state.investments).forEach(([id, val]) => { inv += val; prof += val * (rData.rates[id] || 1); });
-            state.nextAssets = Math.floor((state.assets - inv) + prof);
-            state.isWaiting = true; 
-            sync(); alert("정산 코드가 확인되었습니다. 관리자가 라운드를 활성화하면 수익이 반영됩니다.");
-        }
-
-        function updateUI() {
-            document.getElementById('display-assets').innerText = state.assets.toLocaleString();
-            document.getElementById('display-round').innerText = "ROUND " + globalRound;
-            document.getElementById('display-name').innerText = `Node: ${state.name}`;
-            document.getElementById('display-coins').innerText = state.coins;
-        }
-
-        function openScanner() { /* QR 관련 생략 */ }
-        let db = null; try { const cfg = { apiKey: "AIzaSyBJ-Z1E9oCtf-4lXZ4kXNB7g2wDpzQRp20", databaseURL: "https://stock-war-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "stock-war" }; firebase.initializeApp(cfg); db = firebase.database(); } catch(e){}
-        if(state.name) startGame();
+        function setLock(name, status) { db.ref('rankings/' + name).update({ isLocked: status, isWaiting: false }); }
+        function nextRound() { if(confirm(`ROUND ${currentRound+1}을 활성화할까요?`)) db.ref('game_settings').update({ currentRound: currentRound + 1 }); }
+        function addCoin(n, a) { db.ref('rankings/'+n+'/coins').transaction(c => (c||0)+a); }
+        function kick(n) { if(confirm(`${n} 팀을 추방할까요?`)) { db.ref('rankings/' + n).remove(); } }
+        function globalReset() { if(confirm("전체 초기화합니다. 모든 사용자가 튕겨나갑니다.")) { db.ref('rankings').remove(); db.ref('game_settings').update({ currentRound: 1 }); } }
+        function editBal(n, c) { const v = prompt(`${n} 팀 자산 수정`, c); if(v) db.ref('rankings/'+n).update({ assets: parseInt(v) }); }
     </script>
 </body>
 </html>
